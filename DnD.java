@@ -62,7 +62,7 @@ public class DnD{
             variableMap.put("name", "");
             variableMap.put("location", "town");
             variableMap.put("tutorialMode", false);
-            variableMap.put("inventory", new Object[25]);
+            variableMap.put("inventory", new Item[25]);
             variableMap.put("weapon", new Item("fists",1,3,0));
             variableMap.put("armor", new Item("body",8,0));
         }
@@ -110,13 +110,21 @@ public class DnD{
             variableMap.put("armorClass", initArmorClass);
             variableMap.put("cost", initCost);
         }
-        Item(String initName, int initNumOfDice, int initNumOfSides, int initCost, Consumer<Item> function){
+        Item(String initName, String initDescription, int initCost, int amount, Consumer<Item> function){
             variableMap.put("type", "potion");
+            variableMap.put("amount", amount);
             variableMap.put("name", initName);
             variableMap.put("cost", initCost);
+            variableMap.put("description", initDescription);
+            variableMap.put("function", function);
+        }
+        Item(String initName, int initNumOfDice, int initNumOfSides, int initCost, int amount){
+            variableMap.put("type", "spell");
+            variableMap.put("amount", amount);
+            variableMap.put("name", initName);
             variableMap.put("numOfDice", initNumOfDice);
             variableMap.put("numOfSides", initNumOfSides);
-            variableMap.put("function", function);
+            variableMap.put("cost", initCost);
         }
         Object getVariable(String variableName){
             return variableMap.get(variableName);
@@ -130,7 +138,7 @@ public class DnD{
                 info = "Damage : "+variableMap.get("numOfDice")+"-"+(int)variableMap.get("numOfDice")*(int)variableMap.get("numOfSides");
             }
             else if(type.equals("potion")){
-                info = "Heals : "+variableMap.get("numOfDice")+"-"+(int)variableMap.get("numOfDice")*(int)variableMap.get("numOfSides");
+                info = (String)variableMap.get("description");
             }
             else{
                 info = "Armor Class : "+variableMap.get("armorClass");
@@ -143,9 +151,9 @@ public class DnD{
         }
     }
     static class Shop{
-        Map<String, Object[]> variableMap = new HashMap<>();
+        Map<String, Item[]> variableMap = new HashMap<>();
         Shop(){
-            variableMap.put("weapons", new Object[]{
+            variableMap.put("weapons", new Item[]{
                 new Item("Dagger",1,6,5),
                 new Item("Sharp Sword",1,10,10),
                 new Item("Morningstar",2,6,25),
@@ -153,7 +161,7 @@ public class DnD{
                 new Item("Battleaxe",4,6,125),
                 new Item("Great Sword",5,6,300)
             });
-            variableMap.put("armors", new Object[]{
+            variableMap.put("armors", new Item[]{
                 new Item("Cloth Armor",10,30),
                 new Item("Leather Armor",11,60),
                 new Item("Studded Leather Armor",12,90),
@@ -161,11 +169,11 @@ public class DnD{
                 new Item("Chain Mail Armor",14,400),
                 new Item("Plate Mail Armor",15,800)
             });
-            variableMap.put("spells", new Object[]{
-                
+            variableMap.put("spells", new Item[]{
+                new Item("Magic Missle",3,6,12,5)
             });
-            variableMap.put("potions", new Object[]{
-                new Item("Healing Potion",5,6,15, item -> {
+            variableMap.put("potions", new Item[]{
+                new Item("Healing Potion","Heals for : 5-30hp",15,3, item -> {
                     int[] roll = rollDice(5,6);
                     int total = roll[0]+roll[1]+roll[2]+roll[3]+roll[4]+character.getAttributeBonus("constitution");
                     character.setVariable("hp", total);
@@ -178,13 +186,10 @@ public class DnD{
                 })
             });
         }
-        Item getItem(String type, int index){
-            return (Item) variableMap.get(type)[index];
-        }
         void listItemsForSale(String type) throws InterruptedException{
             Object[] items = variableMap.get(type);
             for(int i=0; i<items.length; i++){
-                getItem(type, i).printItem();
+                variableMap.get(type)[i].printItem();
             }
         }
     }
@@ -242,7 +247,7 @@ public class DnD{
         }
     }
 
-    static void GettingStarted() throws InterruptedException{
+    static void gettingStarted() throws InterruptedException{
         print("Welcome to Dungeon Adventure!");
         print("What would you like your character name to be?");
         createCharacterName();
@@ -311,20 +316,11 @@ public class DnD{
     }
 
     static void game() throws InterruptedException{
-        print("Would you like to play in tutorial mode?(y for yes and n for no)");
-        String answer = input.nextLine();
-        if(answer.equals("y")){
-            character.setVariable("tutorialMode", true);
-        }
-        //print("Tutorial mode has been set to "+character.getVariable("tutorialMode")+". You can change this at any time by saying "+'"'+"activate tutorial mode"+'"'+" or "+'"'+"deactivate tutorial mode"+'"'+". You can also say "+'"'+"help"+'"'+" at anytime for a list of commands"+"(press enter to continue)");
-        input.nextLine();
+        String answer;
         while(true){
             String characterLocation = (String)character.getVariable("location");
             if(characterLocation.equals("town")){
                 print("You are in town. What would you like to do?");
-                /*if((boolean)character.getVariable("tutorialMode")){
-                    print("Some things you can do are: go to shop, go to dungeon, or 'help' for a list of commands");
-                }*/
                 answer = input.nextLine();
                 if(answer.toLowerCase().contains("shop")){
                     character.setVariable("location", "shop");
@@ -341,24 +337,76 @@ public class DnD{
             }*/
             else if(characterLocation.equals("shop")){
                 print("You are in the shop. What would you like to do?");
-                /*if((boolean)character.getVariable("tutorialMode")){
-                    print("Some things you can do are: list weapons for sale, 'buy' and then the item name, or 'help' for a list of commands");
-                }*/
                 answer = input.nextLine();
                 if(answer.toLowerCase().contains("town")){
                     character.setVariable("location", "town");
                 }
                 else if(answer.toLowerCase().contains("weapons")){
+                    print("Here are the weapons for sale");
                     shop.listItemsForSale("weapons");
                 }
                 else if(answer.toLowerCase().contains("armors")){
+                    print("Here are the armors for sale");
                     shop.listItemsForSale("armors");
                 }
                 else if(answer.toLowerCase().contains("spells")){
+                    print("Here are the spells for sale");
                     shop.listItemsForSale("spells");
                 }
                 else if(answer.toLowerCase().contains("potions")){
+                    print("Here are the potions for sale");
                     shop.listItemsForSale("potions");
+                }
+                else if(answer.toLowerCase().contains("all items")){
+                    print("Here are the weapons for sale");
+                    shop.listItemsForSale("weapons");
+                    print("\nHere are the armors for sale");
+                    shop.listItemsForSale("armors");
+                    print("\nHere are the spells for sale");
+                    shop.listItemsForSale("spells");
+                    print("\nHere are the potions for sale");
+                    shop.listItemsForSale("potions");
+                }
+                else if(answer.toLowerCase().contains("buy")){
+                    Object[] selectedItem = new Object[2];
+                    String[] itemTypes = {"weapons","armors","spells","potions"};
+                    for(int i=0; i<itemTypes.length; i++){
+                        Object[] items = shop.variableMap.get(itemTypes[i]);
+                        for(int o=0; o<items.length; o++){
+                            if(answer.toLowerCase().contains(((String)shop.variableMap.get(itemTypes[i])[o].getVariable("name")).toLowerCase())){
+                                selectedItem = new Object[]{itemTypes[i], o};
+                            }
+                        }
+                    }
+                    if(selectedItem[0] != null){
+                        int characterGold = (int)character.getVariable("gold");
+                        Item item = shop.variableMap.get((String)selectedItem[0])[(int)selectedItem[1]];
+                        int itemCost = (int)item.getVariable("cost");
+                        if(characterGold>=itemCost){
+                            print("Are you sure you would like to purchase the "+item.getVariable("name")+" for "+itemCost+" gold?(y to confirm)");
+                            answer = input.nextLine();
+                            if(answer.toLowerCase().equals("y")){
+                                character.setVariable("gold", characterGold-itemCost);
+                                Item[] characterInventory = (Item[])character.getVariable("inventory");
+                                for(int i=0; i<(int)characterInventory.length; i++){
+                                    if(characterInventory[i] == null){
+                                        characterInventory[i] = item;
+                                        break;
+                                    }
+                                }
+                                character.setVariable("inventory", (Item[])characterInventory);
+                            }
+                            else{
+                                print("Your purchase has been cancelled");
+                            }
+                        }
+                        else{
+                            print("You do not have enough gold to purchase this item. You have "+characterGold+" gold and the item cost "+itemCost);
+                        }
+                    }
+                    else{
+                        print("That item does not exist. Please tell me what you would like to buy");
+                    }
                 }
                 /*else if(answer.toLowerCase().contains("dungeon")){
                     character.setVariable("location", "dungeon");
@@ -367,7 +415,7 @@ public class DnD{
         }
     }
 	public static void main(String[] args) throws InterruptedException{
-        GettingStarted();
+        gettingStarted();
         game();
     }
 }
