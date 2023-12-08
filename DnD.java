@@ -72,7 +72,7 @@ public class DnD{
         void setVariable(String variableName, Object newValue){
             variableMap.put(variableName, newValue);
         }
-        void printVariables() throws InterruptedException{
+        void printStats() throws InterruptedException{
             String stats[] = {"Name","Gold","Level","Strength","Dexterity","Intelligence","Constitution","Wisdom","Perception","Charisma"};
             for(int i=0; i<10; i++){
                 print(stats[i]+" : "+getVariable(stats[i].toLowerCase()));
@@ -310,54 +310,83 @@ public class DnD{
         print("Finally to determine your starting gold I will sum up the roll of 20 6-sided dice. Rolling the dice you got a grand total of "+character.getVariable("gold")+" gold to start with(press Enter to continue)");
         input.nextLine();
         print("Congratulations! You have finished creating your character. Here are your stats: ");
-        character.printVariables();
+        character.printStats();
         print("(press Enter to continue)");
         input.nextLine();
     }
 
+    static boolean worldCommands(String answer) throws InterruptedException{
+        if(answer.contains("inventory")){
+            print("Here is what you have in your inventory:");
+            Item[] inventory = (Item[])character.getVariable("inventory");
+            for(int i=0; i<inventory.length; i++){
+                if(inventory[i] != null){
+                    inventory[i].printItem();
+                }
+            }
+            return true;
+        }
+        if(answer.contains("stat")){
+            print("Here are your stats: ");
+            character.printStats();
+        }
+        else if(answer.contains("help")){
+            String characterLocation = (String)character.getVariable("location");
+            if(characterLocation.equals("town")){
+                print("Some commands you can say are: \n 'go to shop' or 'go to dungeon'\n'view inventory'\n'view stats'");
+            }
+            else if(characterLocation.equals("shop")){
+                print("Some commands you can say are: \n 'go to town' or 'go to dungeon'\n'view inventory'\n'view stats'\n'view (weapons, armors, spells, potions, or all items) for sale'\n'buy (item name)'");
+            }
+            else if(characterLocation.equals("dungeon")){
+                //list dungeon commands
+            }
+        }
+        return false;
+    }
     static void game() throws InterruptedException{
         String answer;
         while(true){
             String characterLocation = (String)character.getVariable("location");
             if(characterLocation.equals("town")){
                 print("You are in town. What would you like to do?");
-                answer = input.nextLine();
-                if(answer.toLowerCase().contains("shop")){
+                answer = input.nextLine().toLowerCase();
+                if(answer.contains("shop")){
                     character.setVariable("location", "shop");
                 }
-                /*else if(answer.toLowerCase().contains("dungeon")){
-                    character.setVariable("location", "dungeon");
-                }*/
-            }
-            /*else if(characterLocation.equals("dungeon")){
-                print("You are in the dungeon. What would you like to do?");
-                if((boolean)character.getVariable("tutorialMode")){
-                    
+                else if(answer.contains("dungeon")){
+                    print("Dungeon has not yet been implemented into the game");
                 }
-            }*/
+                else if(!worldCommands(answer)){
+                    print("Invalid command. Say 'help' for a list of commands");
+                }
+            }
+            else if(characterLocation.equals("dungeon")){
+                print("You are in the dungeon. What would you like to do?");
+            }
             else if(characterLocation.equals("shop")){
                 print("You are in the shop. What would you like to do?");
-                answer = input.nextLine();
-                if(answer.toLowerCase().contains("town")){
+                answer = input.nextLine().toLowerCase();
+                if(answer.contains("town")){
                     character.setVariable("location", "town");
                 }
-                else if(answer.toLowerCase().contains("weapons")){
+                else if(answer.contains("weapons")){
                     print("Here are the weapons for sale");
                     shop.listItemsForSale("weapons");
                 }
-                else if(answer.toLowerCase().contains("armors")){
+                else if(answer.contains("armors")){
                     print("Here are the armors for sale");
                     shop.listItemsForSale("armors");
                 }
-                else if(answer.toLowerCase().contains("spells")){
+                else if(answer.contains("spells")){
                     print("Here are the spells for sale");
                     shop.listItemsForSale("spells");
                 }
-                else if(answer.toLowerCase().contains("potions")){
+                else if(answer.contains("potions")){
                     print("Here are the potions for sale");
                     shop.listItemsForSale("potions");
                 }
-                else if(answer.toLowerCase().contains("all items")){
+                else if(answer.contains("all items")){
                     print("Here are the weapons for sale");
                     shop.listItemsForSale("weapons");
                     print("\nHere are the armors for sale");
@@ -367,13 +396,13 @@ public class DnD{
                     print("\nHere are the potions for sale");
                     shop.listItemsForSale("potions");
                 }
-                else if(answer.toLowerCase().contains("buy")){
+                else if(answer.contains("buy")){
                     Object[] selectedItem = new Object[2];
                     String[] itemTypes = {"weapons","armors","spells","potions"};
                     for(int i=0; i<itemTypes.length; i++){
                         Object[] items = shop.variableMap.get(itemTypes[i]);
                         for(int o=0; o<items.length; o++){
-                            if(answer.toLowerCase().contains(((String)shop.variableMap.get(itemTypes[i])[o].getVariable("name")).toLowerCase())){
+                            if(answer.contains(((String)shop.variableMap.get(itemTypes[i])[o].getVariable("name")).toLowerCase())){
                                 selectedItem = new Object[]{itemTypes[i], o};
                             }
                         }
@@ -385,7 +414,7 @@ public class DnD{
                         if(characterGold>=itemCost){
                             print("Are you sure you would like to purchase the "+item.getVariable("name")+" for "+itemCost+" gold?(y to confirm)");
                             answer = input.nextLine();
-                            if(answer.toLowerCase().equals("y")){
+                            if(answer.equals("y")){
                                 character.setVariable("gold", characterGold-itemCost);
                                 Item[] characterInventory = (Item[])character.getVariable("inventory");
                                 for(int i=0; i<(int)characterInventory.length; i++){
@@ -401,16 +430,19 @@ public class DnD{
                             }
                         }
                         else{
-                            print("You do not have enough gold to purchase this item. You have "+characterGold+" gold and the item cost "+itemCost);
+                            print("You do not have enough gold to purchase this item. You have "+characterGold+" gold and the item cost "+itemCost+" gold");
                         }
                     }
                     else{
                         print("That item does not exist. Please tell me what you would like to buy");
                     }
                 }
-                /*else if(answer.toLowerCase().contains("dungeon")){
-                    character.setVariable("location", "dungeon");
-                }*/
+                else if(answer.contains("dungeon")){
+                    print("Dungeon has not yet been implemented into the game");
+                }
+                else if(!worldCommands(answer)){
+                    print("Invalid command. Say 'help' for a list of commands");
+                }
             }
         }
     }
