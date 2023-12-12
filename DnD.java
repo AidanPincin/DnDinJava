@@ -1,6 +1,7 @@
 import java.util.*;
 import java.util.function.Consumer;
 public class DnD{
+    // Gets the width of the console that the program is running on(This may not work on all operating systems)
     static int getConsoleWidth(){
         try{
             Process process = new ProcessBuilder("sh", "-c", "tput cols").start();
@@ -13,11 +14,16 @@ public class DnD{
         return 80;
     }
 
+    // Prints text character by character to give the feeling of a narrator typing
     static void print(Object text) throws InterruptedException{
         int consoleWidth = getConsoleWidth();
+        // Array of the lines that the String will be printed on
         ArrayList<String> lines = new ArrayList<String>();
         int indexOfLastSpace = 0;
         int indexOfFirstSpace = 0;
+        // Determines where the string gets cut off in the console using consoleWidth and measuring string length
+        // and and adds the substring from the start to the last word that doesnt get cutoff to the lines
+        // array and repeats this process until no cutoffs are detected
         while(true){
             if(text.toString().substring(indexOfFirstSpace,text.toString().length()).length() > consoleWidth){
                 for(int i=indexOfFirstSpace; i<consoleWidth+indexOfFirstSpace; i++){
@@ -33,6 +39,7 @@ public class DnD{
                 break;
             }
         }
+        // Go through each line in the lines array and print character by character
         for(int line=0; line<lines.size(); line++){
             for(int i=0; i<lines.get(line).length(); i++){
                 System.out.print(lines.get(line).charAt(i));
@@ -43,7 +50,9 @@ public class DnD{
     }
 
     static Scanner input = new Scanner(System.in);
+    // Character class that will be used to store all data relating to the user/player
     static class DnDCharacter{
+        // Variable map that stores any kind of variable
         Map<String, Object> variableMap = new HashMap<>();
         DnDCharacter(){
             variableMap.put("strength", 0);
@@ -84,6 +93,7 @@ public class DnD{
                 }
             }
         }
+        // Returns the bonus of a specific attribute depending on the value of the attribute which will be used in a addition to a roll
         int getAttributeBonus(String attribute){
             int value = (int)getVariable(attribute);
             if(value>=16){return 3;}
@@ -95,8 +105,11 @@ public class DnD{
             else{return -3;}
         }
     }
+    // Item class with overloading to determine if item is weapon, armor, potion, or spell
     static class Item{
+        // Variable map that stores any type of variable
         Map<String, Object> variableMap = new HashMap<>();
+        // weapon
         Item(String initName, int initNumOfDice, int initNumOfSides, int initCost){
             variableMap.put("type", "weapon");
             variableMap.put("name", initName);
@@ -104,12 +117,14 @@ public class DnD{
             variableMap.put("numOfSides", initNumOfSides);
             variableMap.put("cost", initCost);
         }
+        // armor
         Item(String initName, int initArmorClass, int initCost){
             variableMap.put("type", "armor");
             variableMap.put("name", initName);
             variableMap.put("armorClass", initArmorClass);
             variableMap.put("cost", initCost);
         }
+        // potion
         Item(String initName, String initDescription, int initCost, int amount, Consumer<Item> function){
             variableMap.put("type", "potion");
             variableMap.put("amount", amount);
@@ -118,6 +133,7 @@ public class DnD{
             variableMap.put("description", initDescription);
             variableMap.put("function", function);
         }
+        // spell
         Item(String initName, int initNumOfDice, int initNumOfSides, int initCost, int amount){
             variableMap.put("type", "spell");
             variableMap.put("amount", amount);
@@ -129,6 +145,7 @@ public class DnD{
         Object getVariable(String variableName){
             return variableMap.get(variableName);
         }
+        // Prints the information of the item which is used when displaying items in the shop or displaying player inventory
         void printItem() throws InterruptedException{
             String name = (String)variableMap.get("name");
             int cost = (int)variableMap.get("cost");
@@ -145,12 +162,15 @@ public class DnD{
             }
             print(name+" -- "+info+" || Cost : "+cost+" gold");
         }
+        // Some items will have a stored function as one of its variables. This grabs the function and executes it when called
         void executeStoredFunction(){
             Consumer<Item> function = (Consumer<Item>) variableMap.get("function");
             function.accept(this);
         }
     }
+    // Shop with initialization of all the items catorgized into weapons, armors, potions, and spells
     static class Shop{
+        // Variable map that only stores 'Item' type arrays
         Map<String, Item[]> variableMap = new HashMap<>();
         Shop(){
             variableMap.put("weapons", new Item[]{
@@ -173,6 +193,7 @@ public class DnD{
                 new Item("Magic Missle",3,6,12,5)
             });
             variableMap.put("potions", new Item[]{
+                // Passing a function as a parameter in Java!                                                   ↓
                 new Item("Healing Potion","Heals for : 5-30hp",15,3, item -> {
                     int[] roll = rollDice(5,6);
                     int total = roll[0]+roll[1]+roll[2]+roll[3]+roll[4]+character.getAttributeBonus("constitution");
@@ -186,6 +207,7 @@ public class DnD{
                 })
             });
         }
+        // List all the items in the type(weapons, armors, potions, spells) for sale and their information
         void listItemsForSale(String type) throws InterruptedException{
             Object[] items = variableMap.get(type);
             for(int i=0; i<items.length; i++){
@@ -197,6 +219,7 @@ public class DnD{
     static DnDCharacter character = new DnDCharacter();
     static Shop shop = new Shop();
 
+    // Simple roll dice function that returns an array of int given number of dice and number of sides on the dice
     private static int[] rollDice(int numDice, int sides){
         int[] roll = new int[numDice];
         for(int i=0; i<numDice; i++){
@@ -205,6 +228,7 @@ public class DnD{
         return roll;
     }
 
+    // Getting the user to create their name
     static void createCharacterName() throws InterruptedException{
         boolean isValidName = false;
         while(!isValidName){
@@ -212,6 +236,7 @@ public class DnD{
             isValidName = true;
             int specialCharacterCount = 0;
             String name = input.nextLine();
+            // Checking to make sure name follows paremeters given
             if(name.length()>=3 && name.length()<=18){
                 for(int i=0; i<name.length(); i++){
                     if(!Character.isLetterOrDigit(name.charAt(i))){
@@ -229,6 +254,7 @@ public class DnD{
             if(specialCharacterCount>3){
                 isValidName = false;
             }
+            // Verifying that the user wants to assign their name
             if(isValidName){
                 while(true){
                     print("Are you sure you want to be name "+'"'+name+'"'+"? You will not be able to change your name('y' for yes and 'n' for no)");
@@ -242,6 +268,9 @@ public class DnD{
                         isValidName = false;
                         break;
                     }
+                    else{
+                        print("Invalid input");
+                    }
                 }
             }
         }
@@ -253,24 +282,28 @@ public class DnD{
         createCharacterName();
         createCharacterAttributes();
     }
-
+    // User creates their character, assigning their attribute values to whatever they roll one at a time
     static void createCharacterAttributes() throws InterruptedException{
         String[] attributes = {"strength","dexterity","intelligence","constitution","wisdom","perception","charisma"};
         print("Now we will begin assigning your attributes. You have 7 attributes which are strength, dexterity, intelligence, constitution, wisdom, perception, and charisma. To determine each attribute value I will roll 4 6-sided dice and sum up the 3 highest rolls which you will get to assign to one of your unassigned attributes.(press enter to continue)");
         input.nextLine();
+        // Rolls dice and asks user to assign value 6 times
         for(int i=0; i<6; i++){
+            // Rolls dice and finds sum of 3 highest values out of 4 dice
             int[] roll = rollDice(4, 6);
             int sum = Math.max(roll[0],roll[1])+Math.max(roll[2],roll[3])+Math.max(Math.min(roll[0],roll[1]),Math.min(roll[2],roll[3]));
             print("Rolling the dice you got "+roll[0]+", "+roll[1]+", "+roll[2]+", and "+roll[3]+". So the 3 highest rolls add up to a toal of "+sum);
             print("Your remaining attributes are:");
             while(true){
                 for(int a=0; a<7; a++){
+                    // Prints attributes that havent been assigned a value
                     if((int)character.getVariable(attributes[a]) == 0){
                         print(attributes[a]);
                     }
                 }
                 print("Which attribute would you like to assign the value of "+sum+"?");
                 String attribute = input.nextLine().toLowerCase();
+                // Check to make sure user entered a valid attribute that hasnt already been assigned
                 if(Arrays.asList(attributes).contains(attribute) && (int)character.getVariable(attribute) == 0){
                     character.setVariable(attribute, sum);
                     print("Your "+attribute+" has been assigned the value of "+sum);
@@ -281,6 +314,7 @@ public class DnD{
                 }
             }
         }
+        // Automatically rolls for and assigns value for remaining attribute
         String remainingAttribute = "";
         int[] roll = rollDice(4, 6);
         int sum = Math.max(roll[0],roll[1])+Math.max(roll[2],roll[3])+Math.max(Math.min(roll[0],roll[1]),Math.min(roll[2],roll[3]));
@@ -293,6 +327,7 @@ public class DnD{
         }
         print("So your remaining attribute "+remainingAttribute+" has been assigned the value of "+sum+"(press Enter to continue)");
         input.nextLine();
+        // Determines user's starting hit points
         print("Now I must determine your starting hitpoints by multiplying your constitution by 2 and adding the sum of 2 six-sided dice(press Enter to continue)");
         input.nextLine();
         roll = rollDice(2, 6);
@@ -301,6 +336,7 @@ public class DnD{
         character.setVariable("max_hp", character.getVariable("hp"));
         print("Rolling the dice you got "+roll[0]+" and "+roll[1]+" for a toal of "+sum+" plus your constitution of "+character.getVariable("constitution")+" multiplied by 2 gets you a grand total of "+character.getVariable("hp")+". So you will start with "+character.getVariable("hp")+" hit points(press Enter to continue)");
         input.nextLine();
+        // Determines user's starting gold
         roll = rollDice(20,6);
         sum = 0;
         for(int i=0; i<20; i++){
@@ -314,8 +350,9 @@ public class DnD{
         print("(press Enter to continue)");
         input.nextLine();
     }
-
+    // Commands that can be used anywhere at anytime(in town, shop, dungeon, in the middle of a battle, etc.)
     static boolean worldCommands(String answer) throws InterruptedException{
+        // Prints player inventory
         if(answer.contains("inventory")){
             print("Here is what you have in your inventory:");
             Item[] inventory = (Item[])character.getVariable("inventory");
@@ -326,10 +363,12 @@ public class DnD{
             }
             return true;
         }
+        // Prints player stats
         if(answer.contains("stat")){
             print("Here are your stats: ");
             character.printStats();
         }
+        // Lists commands that user can use depending on their location
         else if(answer.contains("help")){
             String characterLocation = (String)character.getVariable("location");
             if(characterLocation.equals("town")){
@@ -344,10 +383,13 @@ public class DnD{
         }
         return false;
     }
+    // This is where the player will play the entirety of the game inside an infinite loop until they die
     static void game() throws InterruptedException{
         String answer;
         while(true){
+            // Gets character location which determines the actions the player can take and what happens
             String characterLocation = (String)character.getVariable("location");
+            // If player is in town they can go to shop or dungeon and more things in the future
             if(characterLocation.equals("town")){
                 print("You are in town. What would you like to do?");
                 answer = input.nextLine().toLowerCase();
@@ -361,9 +403,11 @@ public class DnD{
                     print("Invalid command. Say 'help' for a list of commands");
                 }
             }
+            // Dungeon has not been implented into the game
             else if(characterLocation.equals("dungeon")){
                 print("You are in the dungeon. What would you like to do?");
             }
+            // If player is in shop they can go to town or dungeon, list items for sale, buy items, and more in the future
             else if(characterLocation.equals("shop")){
                 print("You are in the shop. What would you like to do?");
                 answer = input.nextLine().toLowerCase();
@@ -396,9 +440,11 @@ public class DnD{
                     print("\nHere are the potions for sale");
                     shop.listItemsForSale("potions");
                 }
+                // Buying an item
                 else if(answer.contains("buy")){
                     Object[] selectedItem = new Object[2];
                     String[] itemTypes = {"weapons","armors","spells","potions"};
+                    // Checks if existing item exists in the user input
                     for(int i=0; i<itemTypes.length; i++){
                         Object[] items = shop.variableMap.get(itemTypes[i]);
                         for(int o=0; o<items.length; o++){
@@ -407,6 +453,8 @@ public class DnD{
                             }
                         }
                     }
+                    // If item was found in user input then asks for varification that user would like to purchase 
+                    // the item then checks if user is able to afford it
                     if(selectedItem[0] != null){
                         int characterGold = (int)character.getVariable("gold");
                         Item item = shop.variableMap.get((String)selectedItem[0])[(int)selectedItem[1]];
@@ -414,6 +462,7 @@ public class DnD{
                         if(characterGold>=itemCost){
                             print("Are you sure you would like to purchase the "+item.getVariable("name")+" for "+itemCost+" gold?(y to confirm)");
                             answer = input.nextLine();
+                            // Adds item to character inventory
                             if(answer.equals("y")){
                                 character.setVariable("gold", characterGold-itemCost);
                                 Item[] characterInventory = (Item[])character.getVariable("inventory");
@@ -434,7 +483,7 @@ public class DnD{
                         }
                     }
                     else{
-                        print("That item does not exist. Please tell me what you would like to buy");
+                        print("That item does not exist. Please provide the item you would like to buy");
                     }
                 }
                 else if(answer.contains("dungeon")){
